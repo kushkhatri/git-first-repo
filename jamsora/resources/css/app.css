@@ -3,10 +3,30 @@
 @tailwind utilities;
 
 @layer base {
-    .font-serif {
-        font-family: 'EB Garamond', Georgia, serif;
-    }
     body {
-        font-family: 'Noto Sans', system-ui, sans-serif;
+        @apply bg-jamsora-paper text-jamsora-ink antialiased;
+        font-family: 'Montserrat', system-ui, sans-serif;
+    }
+}
+
+@layer components {
+    .btn-primary {
+        @apply inline-flex items-center justify-center bg-jamsora-ink text-white px-8 py-3 text-sm font-medium tracking-wide uppercase transition hover:bg-jamsora-charcoal focus:outline-none focus:ring-2 focus:ring-jamsora-champagne focus:ring-offset-2;
+    }
+
+    .btn-outline {
+        @apply inline-flex items-center justify-center border border-jamsora-ink text-jamsora-ink px-8 py-3 text-sm font-medium tracking-wide uppercase transition hover:bg-jamsora-ink hover:text-white;
+    }
+
+    .input-field {
+        @apply w-full rounded-sm border-jamsora-border bg-white text-jamsora-ink placeholder:text-jamsora-subtle focus:border-jamsora-ink focus:ring-jamsora-ink text-sm;
+    }
+
+    .section-title {
+        @apply font-display text-3xl md:text-4xl text-jamsora-ink font-medium tracking-tight;
+    }
+
+    .text-accent {
+        @apply text-jamsora-champagne;
     }
 }

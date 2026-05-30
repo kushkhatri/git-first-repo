@@ -4,33 +4,40 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Admin') — Jamsora CMS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="bg-stone-100 min-h-screen">
+<body class="bg-jamsora-cream min-h-screen">
     <div class="flex min-h-screen">
-        <aside class="w-64 bg-stone-900 text-stone-300 flex-shrink-0">
-            <div class="p-6 border-b border-stone-800">
-                <a href="{{ route('admin.dashboard') }}" class="font-serif text-xl text-white">Jamsora CMS</a>
+        <aside class="w-64 bg-jamsora-ink text-jamsora-subtle flex-shrink-0 flex flex-col">
+            <div class="p-6 border-b border-white/10">
+                <x-jamsora-logo variant="light" />
+                <p class="text-[10px] uppercase tracking-[0.3em] mt-3 text-jamsora-subtle">CMS</p>
             </div>
-            <nav class="p-4 space-y-1 text-sm">
-                <a href="{{ route('admin.dashboard') }}" class="block px-3 py-2 rounded hover:bg-stone-800 {{ request()->routeIs('admin.dashboard') ? 'bg-stone-800 text-white' : '' }}">Dashboard</a>
-                <a href="{{ route('admin.products.index') }}" class="block px-3 py-2 rounded hover:bg-stone-800 {{ request()->routeIs('admin.products.*') ? 'bg-stone-800 text-white' : '' }}">Products</a>
-                <a href="{{ route('admin.categories.index') }}" class="block px-3 py-2 rounded hover:bg-stone-800 {{ request()->routeIs('admin.categories.*') ? 'bg-stone-800 text-white' : '' }}">Categories</a>
-                <a href="{{ route('admin.orders.index') }}" class="block px-3 py-2 rounded hover:bg-stone-800 {{ request()->routeIs('admin.orders.*') ? 'bg-stone-800 text-white' : '' }}">Orders</a>
-                <a href="{{ route('admin.pages.index') }}" class="block px-3 py-2 rounded hover:bg-stone-800 {{ request()->routeIs('admin.pages.*') ? 'bg-stone-800 text-white' : '' }}">Pages</a>
-                <a href="{{ route('admin.settings.index') }}" class="block px-3 py-2 rounded hover:bg-stone-800 {{ request()->routeIs('admin.settings.*') ? 'bg-stone-800 text-white' : '' }}">Settings</a>
-                <hr class="border-stone-800 my-4">
-                <a href="{{ route('home') }}" class="block px-3 py-2 rounded hover:bg-stone-800">View storefront</a>
+            <nav class="p-4 space-y-0.5 text-xs uppercase tracking-[0.15em] flex-1">
+                @foreach([
+                    ['admin.dashboard', 'Dashboard'],
+                    ['admin.products.index', 'Products'],
+                    ['admin.categories.index', 'Categories'],
+                    ['admin.orders.index', 'Orders'],
+                    ['admin.pages.index', 'Pages'],
+                    ['admin.settings.index', 'Settings'],
+                ] as [$route, $label])
+                    <a href="{{ route($route) }}" class="block px-3 py-2.5 rounded-sm transition {{ request()->routeIs(str_replace('.index', '.*', $route).'*') || request()->routeIs($route) ? 'bg-white/10 text-white' : 'hover:bg-white/5 hover:text-white' }}">{{ $label }}</a>
+                @endforeach
             </nav>
+            <div class="p-4 border-t border-white/10">
+                <a href="{{ route('home') }}" class="text-[10px] uppercase tracking-[0.2em] hover:text-white transition">← Storefront</a>
+            </div>
         </aside>
-        <div class="flex-1 flex flex-col">
-            <header class="bg-white border-b border-stone-200 px-8 py-4 flex justify-between items-center">
-                <h1 class="text-lg font-semibold text-stone-800">@yield('heading', 'Admin')</h1>
-                <span class="text-sm text-stone-500">{{ auth()->user()->name }}</span>
+        <div class="flex-1 flex flex-col min-w-0">
+            <header class="bg-white border-b border-jamsora-border px-8 py-4 flex justify-between items-center">
+                <h1 class="text-sm font-medium uppercase tracking-[0.15em] text-jamsora-ink">@yield('heading', 'Admin')</h1>
+                <span class="text-xs text-jamsora-muted">{{ auth()->user()->name }}</span>
             </header>
             <main class="p-8 flex-1">
                 @if(session('success'))
-                    <div class="mb-4 rounded bg-emerald-50 text-emerald-800 px-4 py-3 text-sm">{{ session('success') }}</div>
+                    <div class="mb-6 border border-jamsora-ink bg-jamsora-ink text-white px-4 py-3 text-xs uppercase tracking-widest">{{ session('success') }}</div>
                 @endif
                 @yield('content')
             </main>

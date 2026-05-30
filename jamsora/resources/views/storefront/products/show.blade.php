@@ -1,47 +1,56 @@
 @extends('layouts.storefront')
 @section('title', $product->name)
 @section('content')
-<div class="max-w-7xl mx-auto px-4 py-12">
-    <div class="grid lg:grid-cols-2 gap-12">
-        <div class="bg-stone-100 rounded-lg aspect-square overflow-hidden">
+<div class="max-w-7xl mx-auto px-4 py-16">
+    <div class="grid lg:grid-cols-2 gap-14">
+        <div class="bg-jamsora-cream border border-jamsora-border aspect-square overflow-hidden">
             @if($product->primaryImageUrl())
                 <img src="{{ $product->primaryImageUrl() }}" alt="{{ $product->name }}" class="w-full h-full object-cover">
             @endif
         </div>
         <div>
-            @if($product->category)<p class="text-amber-800 text-sm uppercase tracking-wider">{{ $product->category->name }}</p>@endif
-            <h1 class="font-serif text-4xl mt-2 mb-4">{{ $product->name }}</h1>
-            <p class="text-sm text-stone-500 mb-4">SKU: {{ $product->sku }}</p>
-            <div class="flex items-baseline gap-3 mb-6">
+            @if($product->category)
+                <p class="text-[10px] uppercase tracking-[0.3em] text-jamsora-champagne mb-3">{{ $product->category->name }}</p>
+            @endif
+            <h1 class="font-display text-3xl md:text-4xl text-jamsora-ink mb-4">{{ $product->name }}</h1>
+            <p class="text-xs uppercase tracking-widest text-jamsora-muted mb-6">SKU {{ $product->sku }}</p>
+            <div class="flex items-baseline gap-3 mb-8 pb-8 border-b border-jamsora-border">
                 @if($product->isOnSale())
-                    <span class="text-2xl font-semibold text-amber-900">${{ number_format($product->sale_price, 2) }}</span>
-                    <span class="text-stone-400 line-through">${{ number_format($product->price, 2) }}</span>
+                    <span class="text-3xl font-light text-jamsora-ink">${{ number_format($product->sale_price, 2) }}</span>
+                    <span class="text-jamsora-subtle line-through">${{ number_format($product->price, 2) }}</span>
                 @else
-                    <span class="text-2xl font-semibold text-amber-900">${{ number_format($product->price, 2) }}</span>
+                    <span class="text-3xl font-light text-jamsora-ink">${{ number_format($product->price, 2) }}</span>
                 @endif
             </div>
             @if($product->gem_attributes)
-                <dl class="grid grid-cols-2 gap-3 text-sm mb-6 bg-white p-4 rounded-lg border">
+                <dl class="grid grid-cols-2 gap-4 text-sm mb-8">
                     @foreach($product->gem_attributes as $key => $val)
-                        @if($val)<div><dt class="text-stone-500 capitalize">{{ $key }}</dt><dd class="font-medium">{{ $val }}</dd></div>@endif
+                        @if($val)
+                            <div class="border-l-2 border-jamsora-champagne pl-3">
+                                <dt class="text-[10px] uppercase tracking-widest text-jamsora-muted">{{ $key }}</dt>
+                                <dd class="font-medium text-jamsora-ink mt-0.5">{{ $val }}</dd>
+                            </div>
+                        @endif
                     @endforeach
                 </dl>
             @endif
-            <div class="mb-8 text-stone-600">{!! nl2br(e($product->short_description)) !!}</div>
-            <form action="{{ route('cart.store') }}" method="post" class="flex gap-3">
+            @if($product->short_description)
+                <div class="text-jamsora-muted text-sm leading-relaxed mb-8">{!! nl2br(e($product->short_description)) !!}</div>
+            @endif
+            <form action="{{ route('cart.store') }}" method="post" class="flex flex-wrap gap-3">
                 @csrf
                 <input type="hidden" name="product_id" value="{{ $product->id }}">
-                <input type="number" name="quantity" value="1" min="1" max="{{ max(1, $product->stock_qty) }}" class="w-20 rounded-lg border-stone-300">
-                <button type="submit" @disabled(!$product->inStock()) class="flex-1 bg-amber-800 hover:bg-amber-700 disabled:bg-stone-300 text-white py-3 rounded-full font-medium">
+                <input type="number" name="quantity" value="1" min="1" max="{{ max(1, $product->stock_qty) }}" class="input-field w-20">
+                <button type="submit" @disabled(!$product->inStock()) class="btn-primary flex-1 min-w-[200px] disabled:opacity-40">
                     {{ $product->inStock() ? 'Add to cart' : 'Out of stock' }}
                 </button>
             </form>
         </div>
     </div>
     @if($related->isNotEmpty())
-        <section class="mt-20">
-            <h2 class="font-serif text-2xl mb-6">You may also like</h2>
-            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <section class="mt-24 pt-16 border-t border-jamsora-border">
+            <h2 class="section-title text-2xl mb-8">You may also like</h2>
+            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 @foreach($related as $p)<x-product-card :product="$p" />@endforeach
             </div>
         </section>

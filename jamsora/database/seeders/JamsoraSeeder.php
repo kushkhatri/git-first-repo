@@ -57,7 +57,14 @@ class JamsoraSeeder extends Seeder
         $settings->set('contact_email', 'hello@jamsora.com', 'store');
 
         $this->seedCategories();
-        $this->seedProductsFromReference();
+
+        $csvPath = database_path('data/products.csv');
+        if (is_readable($csvPath)) {
+            $this->command?->call('products:import', ['file' => $csvPath]);
+        } else {
+            $this->seedProductsFromReference();
+        }
+
         $this->seedCmsPages();
 
         $slider = Slider::firstOrCreate(['name' => 'Home Hero'], ['status' => 'active']);
