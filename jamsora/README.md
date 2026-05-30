@@ -18,6 +18,16 @@ Custom Laravel rebuild of [shop.jamsora.com](https://shop.jamsora.com/) per the 
 | **Auth** | Breeze login/register; multi-role (`admin`, `customer`, etc.) |
 | **Data** | Seeder imports sample products/categories from the live WooCommerce Store API |
 
+## Brand assets
+
+Place your logo in `public/brand/` as `logo-dark.png` (header) and `logo-light.png` (footer).
+
+## Product list (Google Sheets)
+
+1. Download CSV from your sheet (File → Download → CSV)
+2. Save as `database/data/products.csv`
+3. Run: `php artisan products:import database/data/products.csv --fresh`
+
 ## Quick start
 
 ```bash
