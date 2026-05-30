@@ -1,0 +1,2 @@
+name,sku,categories,regular_price,sale_price,stock,published,in_stock
+Test Ruby Gem,SKU-RUBY-1,Ruby,500,450,1,1,1
