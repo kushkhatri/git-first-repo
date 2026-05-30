@@ -14,6 +14,56 @@ class ProductImportService
         private readonly StoneContentService $stoneContent,
     ) {}
 
+    /**
+     * @return array{imported: int, path: string}
+     */
+    public function importFromPath(string $path, bool $fresh = false): array
+    {
+        if (! is_readable($path)) {
+            throw new \InvalidArgumentException("File not readable: {$path}");
+        }
+
+        $peek = file_get_contents($path, false, null, 0, 200);
+        if ($peek && (str_contains($peek, '<!DOCTYPE') || str_contains($peek, '<html'))) {
+            throw new \InvalidArgumentException('Invalid CSV: file looks like HTML. Export a real .csv from Google Sheets or WooCommerce.');
+        }
+
+        if ($fresh) {
+            Product::query()->forceDelete();
+        }
+
+        $handle = fopen($path, 'r');
+        if ($handle === false) {
+            throw new \RuntimeException('Could not open CSV file.');
+        }
+
+        $headers = array_map(fn ($h) => Str::slug(trim((string) $h), '_'), fgetcsv($handle) ?: []);
+        if ($headers === []) {
+            fclose($handle);
+            throw new \InvalidArgumentException('CSV has no header row.');
+        }
+
+        $count = 0;
+        while (($row = fgetcsv($handle)) !== false) {
+            if (count(array_filter($row)) === 0) {
+                continue;
+            }
+
+            $data = array_combine($headers, array_pad($row, count($headers), null));
+            if ($data === false) {
+                continue;
+            }
+
+            if ($this->importRow($data)) {
+                $count++;
+            }
+        }
+
+        fclose($handle);
+
+        return ['imported' => $count, 'path' => $path];
+    }
+
     public function importRow(array $data): ?Product
     {
         $data = $this->normalizeRow($data);

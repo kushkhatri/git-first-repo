@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\PageController as AdminPageController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
+use App\Http\Controllers\Admin\ProductImportController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Storefront\Account\OrderController as AccountOrderController;
@@ -39,6 +40,8 @@ Route::middleware(['auth', 'verified'])->prefix('account')->name('account.')->gr
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('products/import', [ProductImportController::class, 'create'])->name('products.import');
+    Route::post('products/import', [ProductImportController::class, 'store'])->name('products.import.store');
     Route::resource('products', AdminProductController::class)->except(['show']);
     Route::resource('categories', AdminCategoryController::class)->except(['show']);
     Route::resource('certifications', AdminCertificationController::class)->except(['show']);
