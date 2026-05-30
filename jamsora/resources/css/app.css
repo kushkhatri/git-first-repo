@@ -35,7 +35,7 @@
     }
 
     .product-card-dagas {
-        @apply group relative bg-white;
+        @apply relative bg-white;
     }
 
     .product-card-dagas .product-thumb {
@@ -43,7 +43,11 @@
     }
 
     .product-card-dagas .product-actions {
-        @apply absolute inset-x-4 bottom-4 flex justify-center gap-2 opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0;
+        @apply absolute inset-x-4 bottom-4 flex justify-center gap-2 opacity-0 translate-y-2 transition-all duration-300;
+    }
+
+    .product-card-dagas:hover .product-actions {
+        @apply opacity-100 translate-y-0;
     }
 
     .product-card-dagas .action-btn {
