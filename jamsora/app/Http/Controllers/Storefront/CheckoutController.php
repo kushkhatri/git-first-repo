@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Storefront;
 
 use App\Http\Controllers\Controller;
+use App\Models\Order;
 use App\Services\CartService;
 use App\Services\OrderService;
 use Illuminate\Http\Request;
@@ -26,6 +27,8 @@ class CheckoutController extends Controller
         return view('storefront.checkout.index', [
             'cart' => $cart,
             'subtotal' => $this->cartService->subtotal($cart),
+            'igiTotal' => $this->cartService->igiTotal($cart),
+            'delivery' => $this->cartService->maxDeliveryDays($cart),
         ]);
     }
 
@@ -53,8 +56,10 @@ class CheckoutController extends Controller
         return redirect()->route('checkout.success', $order)->with('success', 'Order placed successfully.');
     }
 
-    public function success(\App\Models\Order $order)
+    public function success(Order $order)
     {
+        $order->load(['items', 'addresses']);
+
         return view('storefront.checkout.success', compact('order'));
     }
 }

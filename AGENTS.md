@@ -75,3 +75,11 @@ Then run `products:import` or refresh the browser. Invalid CSV (HTML login pages
 ### Legacy static HTML
 
 Root `*.html` files are an old Git demo — ignore for Jamsora work.
+
+### E-commerce features (stone categories, IGI, import)
+
+- Stone category pages: `/diamonds`, `/sapphire`, etc. (`php artisan stones:seed-categories`)
+- Full CSV import: `php artisan products:import database/data/products.csv` (see `database/data/products.csv.example`)
+- IGI add-on: `config/jamsora.php` — fee and extra delivery days; flows through cart, checkout, orders, admin
+- Admin certifications: `/admin/certifications`
+- Customer orders: `/account/orders` (login required)

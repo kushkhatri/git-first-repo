@@ -26,11 +26,22 @@
                         @endif
                         <div class="flex-1 min-w-0">
                             <a href="{{ route('products.show', $item->product->slug) }}" class="font-display text-xl hover:text-jamsora-gold transition">{{ $item->product->name }}</a>
-                            <p class="text-sm text-jamsora-muted mt-1">${{ number_format($item->unit_price, 2) }}</p>
-                            <form action="{{ route('cart.update', $item) }}" method="post" class="flex items-center gap-3 mt-4">
+                            <p class="text-sm text-jamsora-muted mt-1">${{ number_format($item->unit_price, 2) }} each</p>
+                            @if($item->hasIgi())
+                                <p class="text-xs text-jamsora-gold mt-1">IGI Certification (+${{ number_format($item->igiFee(), 2) }})</p>
+                            @endif
+                            <form action="{{ route('cart.update', $item) }}" method="post" class="mt-4 space-y-3">
                                 @csrf @method('PATCH')
-                                <input type="number" name="quantity" value="{{ $item->quantity }}" min="1" class="w-16 border border-jamsora-border px-2 py-1 text-sm">
-                                <button class="text-xs uppercase tracking-widest text-jamsora-gold">Update</button>
+                                <div class="flex items-center gap-3">
+                                    <input type="number" name="quantity" value="{{ $item->quantity }}" min="1" class="w-16 border border-jamsora-border px-2 py-1 text-sm">
+                                    <button class="text-xs uppercase tracking-widest text-jamsora-gold">Update qty</button>
+                                </div>
+                                @if($item->product->igi_available)
+                                    <label class="flex items-center gap-2 text-sm">
+                                        <input type="checkbox" name="igi_certification" value="1" @checked($item->hasIgi())>
+                                        IGI Certification (+${{ number_format(config('jamsora.igi.fee', 100), 0) }})
+                                    </label>
+                                @endif
                             </form>
                         </div>
                         <div class="text-right">
@@ -47,12 +58,22 @@
                 <div class="border border-jamsora-border p-8 bg-jamsora-cream sticky top-28">
                     <h2 class="font-display text-2xl mb-6">Order summary</h2>
                     <div class="flex justify-between text-sm mb-2">
-                        <span class="text-jamsora-muted">Subtotal</span>
-                        <span>${{ number_format($subtotal, 2) }}</span>
+                        <span class="text-jamsora-muted">Merchandise</span>
+                        <span>${{ number_format($subtotal - ($igiTotal ?? 0), 2) }}</span>
+                    </div>
+                    @if(($igiTotal ?? 0) > 0)
+                        <div class="flex justify-between text-sm mb-2">
+                            <span class="text-jamsora-muted">IGI Certification</span>
+                            <span>${{ number_format($igiTotal, 2) }}</span>
+                        </div>
+                    @endif
+                    <div class="flex justify-between text-sm mb-2">
+                        <span class="text-jamsora-muted">Est. delivery</span>
+                        <span>{{ $delivery['min'] ?? 10 }}-{{ $delivery['max'] ?? 14 }} days</span>
                     </div>
                     <div class="flex justify-between text-sm mb-6 pb-6 border-b border-jamsora-border">
                         <span class="text-jamsora-muted">Shipping</span>
-                        <span class="text-jamsora-muted">Calculated at checkout</span>
+                        <span class="text-jamsora-muted">At checkout</span>
                     </div>
                     <div class="flex justify-between font-display text-2xl mb-8">
                         <span>Total</span>

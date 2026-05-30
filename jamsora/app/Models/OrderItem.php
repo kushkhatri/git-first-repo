@@ -8,7 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class OrderItem extends Model
 {
     protected $fillable = [
-        'order_id', 'product_id', 'product_name', 'sku', 'quantity', 'unit_price', 'total',
+        'order_id', 'product_id', 'product_name', 'sku', 'quantity',
+        'unit_price', 'total', 'options',
     ];
 
     protected function casts(): array
@@ -17,6 +18,7 @@ class OrderItem extends Model
             'quantity' => 'integer',
             'unit_price' => 'decimal:2',
             'total' => 'decimal:2',
+            'options' => 'array',
         ];
     }
 
@@ -28,5 +30,15 @@ class OrderItem extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function hasIgi(): bool
+    {
+        return (bool) ($this->options['igi_certification'] ?? false);
+    }
+
+    public function igiFee(): float
+    {
+        return (float) ($this->options['igi_fee'] ?? 0);
     }
 }

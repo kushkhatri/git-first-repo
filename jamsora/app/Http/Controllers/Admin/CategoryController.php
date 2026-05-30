@@ -63,6 +63,10 @@ class CategoryController extends Controller
             'parent_id' => ['nullable', 'exists:categories,id'],
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
+            'meta_title' => ['nullable', 'string', 'max:255'],
+            'meta_description' => ['nullable', 'string'],
+            'seo_content' => ['nullable', 'string'],
+            'og_image' => ['nullable', 'string', 'max:2048'],
             'status' => ['required', 'in:active,inactive'],
             'sort_order' => ['nullable', 'integer'],
         ]);

@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Enums\OrderStatus;
 use App\Models\Order;
-use App\Models\OrderAddress;
 use App\Models\OrderItem;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -23,25 +22,31 @@ class OrderService
         }
 
         return DB::transaction(function () use ($cart, $data) {
+            $merchandise = $this->cartService->merchandiseSubtotal($cart);
+            $igiTotal = $this->cartService->igiTotal($cart);
             $subtotal = $this->cartService->subtotal($cart);
             $shipping = (float) ($data['shipping_cost'] ?? 0);
             $tax = (float) ($data['tax'] ?? 0);
             $discount = (float) ($data['discount'] ?? 0);
             $total = $subtotal + $shipping + $tax - $discount;
+            $delivery = $this->cartService->maxDeliveryDays($cart);
 
             $order = Order::create([
                 'user_id' => auth()->id(),
                 'order_number' => 'JMS-'.strtoupper(Str::random(8)),
-                'subtotal' => $subtotal,
+                'subtotal' => $merchandise,
                 'discount' => $discount,
+                'igi_total' => $igiTotal,
                 'shipping_cost' => $shipping,
                 'tax' => $tax,
                 'total' => $total,
                 'status' => OrderStatus::Pending->value,
-                'payment_status' => $data['payment_method'] === 'cod' ? 'pending' : 'pending',
+                'payment_status' => 'pending',
                 'payment_method' => $data['payment_method'] ?? 'cod',
                 'notes' => $data['notes'] ?? null,
                 'guest_email' => $data['email'] ?? null,
+                'delivery_days_min' => $delivery['min'],
+                'delivery_days_max' => $delivery['max'],
             ]);
 
             foreach ($cart->items as $item) {
@@ -53,6 +58,7 @@ class OrderService
                     'quantity' => $item->quantity,
                     'unit_price' => $item->unit_price,
                     'total' => $item->lineTotal(),
+                    'options' => $item->options,
                 ]);
 
                 if ($item->product->manage_stock) {
@@ -60,8 +66,7 @@ class OrderService
                 }
             }
 
-            OrderAddress::create([
-                'order_id' => $order->id,
+            $order->addresses()->create([
                 'type' => 'shipping',
                 'name' => $data['name'],
                 'phone' => $data['phone'] ?? null,

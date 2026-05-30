@@ -6,6 +6,7 @@
     <title>@yield('title', 'Jamsora') — Fine Gemstones & Jewelry</title>
     <meta name="description" content="@yield('meta_description', 'Curated fine gemstones — certified sapphires, emeralds, and rare gems from Jamsora.')">
     <link rel="preconnect" href="https://fonts.googleapis.com">
+    @stack('head')
     <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&family=Playfair+Display:wght@400;500;600&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -26,7 +27,7 @@
                     <a href="{{ route('home') }}" class="hover:text-jamsora-gold transition {{ request()->routeIs('home') ? 'text-jamsora-gold' : '' }}">Home</a>
                     <a href="{{ route('shop.index') }}" class="hover:text-jamsora-gold transition {{ request()->routeIs('shop.*', 'products.*') ? 'text-jamsora-gold' : '' }}">Shop</a>
                     @foreach(($headerCategories ?? collect())->take(4) as $cat)
-                        <a href="{{ route('shop.index', ['category' => $cat->slug]) }}" class="hover:text-jamsora-gold transition">{{ $cat->name }}</a>
+                        <a href="{{ route('categories.show', $cat->slug) }}" class="hover:text-jamsora-gold transition">{{ $cat->name }}</a>
                     @endforeach
                 </nav>
 
@@ -48,7 +49,7 @@
                         @if(auth()->user()->isAdmin())
                             <a href="{{ route('admin.dashboard') }}" class="hidden md:block text-[11px] uppercase tracking-widest text-jamsora-gold">Admin</a>
                         @endif
-                        <a href="{{ route('profile.edit') }}" class="hidden md:block text-[11px] uppercase tracking-widest hover:text-jamsora-gold">Account</a>
+                        <a href="{{ route('account.orders.index') }}" class="hidden md:block text-[11px] uppercase tracking-widest hover:text-jamsora-gold">Orders</a>
                     @else
                         <a href="{{ route('login') }}" class="hidden md:block text-[11px] uppercase tracking-widest hover:text-jamsora-gold">Login</a>
                     @endauth
@@ -91,7 +92,7 @@
                 <ul class="space-y-2.5 text-sm text-jamsora-muted">
                     <li><a href="{{ route('shop.index') }}" class="hover:text-jamsora-gold transition">All gemstones</a></li>
                     @foreach(($headerCategories ?? collect())->take(6) as $cat)
-                        <li><a href="{{ route('shop.index', ['category' => $cat->slug]) }}" class="hover:text-jamsora-gold transition">{{ $cat->name }}</a></li>
+                        <li><a href="{{ route('categories.show', $cat->slug) }}" class="hover:text-jamsora-gold transition">{{ $cat->name }}</a></li>
                     @endforeach
                 </ul>
             </div>

@@ -19,6 +19,7 @@
                     ['admin.dashboard', 'Dashboard'],
                     ['admin.products.index', 'Products'],
                     ['admin.categories.index', 'Categories'],
+                    ['admin.certifications.index', 'Certifications'],
                     ['admin.orders.index', 'Orders'],
                     ['admin.pages.index', 'Pages'],
                     ['admin.settings.index', 'Settings'],
