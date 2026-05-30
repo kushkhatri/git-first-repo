@@ -59,10 +59,17 @@ class JamsoraSeeder extends Seeder
         $this->seedCategories();
 
         $csvPath = database_path('data/products.csv');
-        if (is_readable($csvPath)) {
+        $csvValid = is_readable($csvPath) && ! str_contains((string) file_get_contents($csvPath, false, null, 0, 100), '<!DOCTYPE');
+
+        if ($csvValid) {
             $this->command?->call('products:import', ['file' => $csvPath]);
         } else {
-            $this->seedProductsFromReference();
+            try {
+                $this->command?->call('products:sync-reference', ['--limit' => 24]);
+            } catch (\Throwable $e) {
+                $this->command?->warn('Reference sync failed, using compact fallback: '.$e->getMessage());
+                $this->seedProductsFromReference();
+            }
         }
 
         $this->seedCmsPages();
@@ -179,22 +186,35 @@ class JamsoraSeeder extends Seeder
 
     private function seedFallbackProducts(): void
     {
-        $category = Category::first();
-        Product::updateOrCreate(
-            ['sku' => 'JRO-DEMO-001'],
-            [
-                'category_id' => $category?->id,
-                'name' => '2.52 cts Untreated Oval Sapphire',
-                'slug' => 'demo-sapphire',
-                'short_description' => 'Premium untreated oval sapphire.',
-                'price' => 588.18,
-                'sale_price' => 490.15,
-                'stock_qty' => 1,
-                'status' => 'published',
-                'is_featured' => true,
-                'gem_attributes' => ['shape' => 'Oval', 'carat' => '2.52', 'certificate' => 'IGI'],
-            ]
-        );
+        $demos = [
+            ['sku' => 'JRO-G627493954', 'name' => '2.52 cts Untreated Oval Sapphire', 'slug' => '2-52-cts-untreated-oval-sapphire', 'cat' => 'Sapphire', 'price' => 588.18, 'sale' => 490.15, 'attrs' => ['shape' => 'Oval', 'carat' => '2.52', 'certificate' => 'IGI']],
+            ['sku' => 'JRO-SA203261383', 'name' => '6.43 cts Untreated Oval Sapphire', 'slug' => '6-43-cts-untreated-oval-sapphire', 'cat' => 'Sapphire', 'price' => 1715.22, 'sale' => 1429.35, 'attrs' => ['shape' => 'Oval', 'carat' => '6.43', 'certificate' => 'IGI']],
+            ['sku' => 'JRO-G250905129', 'name' => '5.1 cts Untreated Oval Peridot', 'slug' => '5-1-cts-untreated-oval-peridot', 'cat' => 'Peridot', 'price' => 340.11, 'sale' => 283.43, 'attrs' => ['shape' => 'Oval', 'carat' => '5.1', 'certificate' => 'IGI']],
+            ['sku' => 'JRO-P658885649', 'name' => '16.85 cts Untreated Oval Peridot', 'slug' => '16-85-cts-untreated-oval-peridot', 'cat' => 'Peridot', 'price' => 2247.39, 'sale' => 1872.83, 'attrs' => ['shape' => 'Oval', 'carat' => '16.85', 'certificate' => 'IGI']],
+        ];
+        $img = 'https://shop.jamsora.com/wp-content/uploads/1.jpg';
+        foreach ($demos as $i => $d) {
+            $category = Category::firstOrCreate(['slug' => \Illuminate\Support\Str::slug($d['cat'])], ['name' => $d['cat'], 'status' => 'active']);
+            $product = Product::updateOrCreate(
+                ['sku' => $d['sku']],
+                [
+                    'category_id' => $category->id,
+                    'name' => $d['name'],
+                    'slug' => $d['slug'],
+                    'short_description' => 'Certified untreated gemstone from Jamsora collection.',
+                    'price' => $d['price'],
+                    'sale_price' => $d['sale'],
+                    'stock_qty' => 1,
+                    'status' => 'published',
+                    'is_featured' => $i < 8,
+                    'gem_attributes' => $d['attrs'],
+                ]
+            );
+            ProductImage::updateOrCreate(
+                ['product_id' => $product->id, 'is_primary' => true],
+                ['path' => $img, 'alt_text' => $d['name'], 'sort_order' => 0, 'is_primary' => true]
+            );
+        }
     }
 
     private function seedCmsPages(): void

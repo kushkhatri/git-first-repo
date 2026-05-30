@@ -25,6 +25,13 @@ class ImportProductsFromCsv extends Command
             return self::FAILURE;
         }
 
+        $peek = file_get_contents($path, false, null, 0, 200);
+        if ($peek && (str_contains($peek, '<!DOCTYPE') || str_contains($peek, '<html'))) {
+            $this->error('Invalid CSV: file looks like HTML. Upload the real .csv from Google Sheets.');
+
+            return self::FAILURE;
+        }
+
         if ($this->option('fresh')) {
             Product::query()->forceDelete();
             $this->warn('Existing products removed.');
