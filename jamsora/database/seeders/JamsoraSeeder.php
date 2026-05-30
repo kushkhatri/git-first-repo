@@ -74,20 +74,32 @@ class JamsoraSeeder extends Seeder
 
         $this->seedCmsPages();
 
-        $slider = Slider::firstOrCreate(['name' => 'Home Hero'], ['status' => 'active']);
-        SliderSlide::updateOrCreate(
-            ['slider_id' => $slider->id, 'sort_order' => 0],
-            [
-                'title' => 'Exceptional gemstones',
-                'subtitle' => 'Direct from Jamsora',
-                'image' => 'https://shop.jamsora.com/wp-content/uploads/1.jpg',
-                'link' => '/shop',
-                'status' => 'active',
-            ]
-        );
+                $slider = Slider::firstOrCreate(['name' => 'Home Hero'], ['status' => 'active']);
+        foreach ([
+            ['title' => 'Elegance In', 'subtitle' => 'Minimalist Design', 'image' => 'https://shop.jamsora.com/wp-content/uploads/1.jpg', 'link' => '/shop'],
+            ['title' => 'Gemstone Set', 'subtitle' => 'For Special Events', 'image' => 'https://shop.jamsora.com/wp-content/uploads/2.jpg', 'link' => '/shop'],
+            ['title' => 'The History Of', 'subtitle' => 'Fine Gemstones', 'image' => 'https://shop.jamsora.com/wp-content/uploads/3.jpg', 'link' => '/shop'],
+        ] as $i => $s) {
+            SliderSlide::updateOrCreate(
+                ['slider_id' => $slider->id, 'sort_order' => $i],
+                ['title' => $s['title'], 'subtitle' => $s['subtitle'], 'image' => $s['image'], 'link' => $s['link'], 'status' => 'active']
+            );
+        }
 
         Tag::firstOrCreate(['slug' => 'bestseller'], ['name' => 'Bestseller']);
         Tag::firstOrCreate(['slug' => 'trend'], ['name' => 'Trend']);
+
+        foreach ([
+            ['name' => 'Linda Maria', 'content' => 'Your commitment to quality and customer satisfaction has been evident in every interaction.', 'rating' => 5],
+            ['name' => 'Ann Smith', 'content' => 'A great company to buy from. Excellent quality products at good value.', 'rating' => 5],
+            ['name' => 'Anana', 'content' => '5-star rating. So amazing and helpful.', 'rating' => 5],
+            ['name' => 'Linda', 'content' => 'I look forward to future transactions with your company.', 'rating' => 5],
+        ] as $i => $row) {
+            Testimonial::updateOrCreate(
+                ['name' => $row['name']],
+                ['content' => $row['content'], 'rating' => $row['rating'], 'status' => 'active', 'sort_order' => $i]
+            );
+        }
     }
 
     private function seedCategories(): void

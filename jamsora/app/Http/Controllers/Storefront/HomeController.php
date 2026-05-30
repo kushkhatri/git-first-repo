@@ -14,6 +14,13 @@ class HomeController extends Controller
     public function __invoke(SettingService $settings)
     {
         $slider = Slider::query()->where('status', 'active')->with('slides')->first();
+
+        $categories = Category::query()
+            ->where('status', 'active')
+            ->withCount('products')
+            ->orderBy('name')
+            ->get();
+
         $featured = Product::query()
             ->where('status', 'published')
             ->where('is_featured', true)
@@ -31,18 +38,34 @@ class HomeController extends Controller
                 ->get();
         }
 
-        $categories = Category::query()
-            ->where('status', 'active')
-            ->whereNull('parent_id')
-            ->orderBy('sort_order')
-            ->take(12)
+        $newArrivals = Product::query()
+            ->where('status', 'published')
+            ->with(['images', 'category'])
+            ->latest()
+            ->take(8)
             ->get();
+
+        $tabCategories = $categories->take(5);
+
+        $productsByCategory = [];
+        foreach ($tabCategories as $category) {
+            $productsByCategory[$category->slug] = Product::query()
+                ->where('status', 'published')
+                ->where('category_id', $category->id)
+                ->with(['images', 'category'])
+                ->latest()
+                ->take(8)
+                ->get();
+        }
 
         return view('storefront.home', [
             'slider' => $slider,
             'featured' => $featured,
+            'newArrivals' => $newArrivals,
             'categories' => $categories,
-            'testimonials' => Testimonial::query()->where('status', 'active')->orderBy('sort_order')->take(3)->get(),
+            'tabCategories' => $tabCategories,
+            'productsByCategory' => $productsByCategory,
+            'testimonials' => Testimonial::query()->where('status', 'active')->orderBy('sort_order')->take(4)->get(),
             'siteName' => $settings->get('site_name', 'Jamsora', 'store'),
             'tagline' => $settings->get('tagline', 'Fine gemstones & jewelry', 'store'),
         ]);
