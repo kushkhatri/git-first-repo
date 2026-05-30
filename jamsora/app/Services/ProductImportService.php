@@ -16,6 +16,8 @@ class ProductImportService
 
     public function importRow(array $data): ?Product
     {
+        $data = $this->normalizeRow($data);
+
         $name = $this->val($data, ['name', 'product_name', 'title']);
         if (! $name) {
             return null;
@@ -28,12 +30,12 @@ class ProductImportService
         }
 
         $category = $this->resolveCategory($data);
-        $certification = $this->resolveCertification($data);
+        $certification = $this->resolveCertification($data, $sku);
 
         $price = $this->money($this->val($data, ['price', 'regular_price', 'amount'])) ?: 0;
         $salePrice = $this->money($this->val($data, ['sale_price', 'sale', 'discount_price']));
 
-        $delivery = $this->parseDelivery($this->val($data, ['delivery_time', 'delivery', 'lead_time']));
+        $delivery = $this->parseDelivery($this->val($data, ['delivery_time', 'delivery', 'lead_time', 'shipping_class']));
 
         $product = Product::updateOrCreate(
             ['sku' => $sku],
@@ -58,7 +60,7 @@ class ProductImportService
                 'delivery_days_min' => $delivery['min'],
                 'delivery_days_max' => $delivery['max'],
                 'igi_available' => ! in_array(strtolower($this->val($data, ['igi_available']) ?? 'yes'), ['no', '0', 'false'], true),
-                'status' => strtolower($this->val($data, ['status']) ?: 'published') === 'draft' ? 'draft' : 'published',
+                'status' => $this->resolvePublishStatus($data),
                 'is_featured' => in_array(strtolower($this->val($data, ['is_featured', 'featured']) ?? ''), ['1', 'yes', 'true'], true),
                 'meta_title' => $this->val($data, ['meta_title', 'seo_title']),
                 'meta_description' => $this->val($data, ['meta_description', 'seo_description']),
@@ -83,13 +85,77 @@ class ProductImportService
         return $product;
     }
 
+    /**
+     * Map WooCommerce export columns into the canonical import field names.
+     */
+    private function normalizeRow(array $data): array
+    {
+        if (! $this->val($data, ['regular_price', 'categories', 'images'])) {
+            return $data;
+        }
+
+        for ($i = 1; $i <= 5; $i++) {
+            $attrName = strtolower(trim((string) ($data["attribute_{$i}_name"] ?? '')));
+            $attrVal = trim(preg_replace('/^\h+/u', '', (string) ($data["attribute_{$i}_values"] ?? '')));
+            if ($attrName === '' || $attrVal === '') {
+                continue;
+            }
+
+            if (str_contains($attrName, 'gems') || $attrName === 'gems type') {
+                $data['gems_type'] = $attrVal;
+            } elseif ($attrName === 'shape') {
+                $data['shape'] = $attrVal;
+            } elseif (str_contains($attrName, 'dimension')) {
+                $data['dimensions'] = $attrVal;
+            } elseif (str_contains($attrName, 'certificate') || str_contains($attrName, 'cert')) {
+                $data['certificate'] = $attrVal;
+            } elseif (str_contains($attrName, 'carat')) {
+                $data['carat'] = $attrVal;
+            }
+        }
+
+        if (empty($data['category']) && ! empty($data['categories'])) {
+            $data['category'] = $this->parseCategoryName((string) $data['categories']);
+        }
+
+        if (empty($data['delivery_time']) && ! empty($data['shipping_class'])) {
+            $data['delivery_time'] = (string) $data['shipping_class'];
+        }
+
+        if (! empty($data['images'])) {
+            $parts = array_values(array_filter(array_map('trim', preg_split('/\s*,\s*/', (string) $data['images']))));
+            if ($parts !== []) {
+                $data['image_url'] = $parts[0];
+                $data['gallery_images'] = implode('|', $parts);
+            }
+        }
+
+        return $data;
+    }
+
+    private function parseCategoryName(string $raw): string
+    {
+        $parts = array_map('trim', preg_split('/\s*>\s*/', $raw));
+
+        return $parts[0] ?: $raw;
+    }
+
     private function resolveCategory(array $data): ?Category
     {
-        $categoryName = $this->val($data, ['category', 'category_name', 'gems_type', 'gem_type', 'stone_category']);
+        $categoryName = $this->val($data, [
+            'categories', 'category', 'category_name', 'stone_category',
+        ]) ?? $this->val($data, ['gems_type', 'gem_type', 'stone_type']);
+
         $subName = $this->val($data, ['subcategory', 'sub_category']);
 
         if (! $categoryName) {
             return null;
+        }
+
+        if (str_contains($categoryName, '>')) {
+            $parts = array_map('trim', explode('>', $categoryName));
+            $categoryName = $parts[0];
+            $subName = $subName ?: ($parts[1] ?? null);
         }
 
         $parent = Category::firstOrCreate(
@@ -100,7 +166,7 @@ class ProductImportService
         $this->stoneContent->ensureCategoryContent($parent);
 
         if ($subName) {
-            return Category::firstOrCreate(
+            $child = Category::firstOrCreate(
                 ['slug' => Str::slug($parent->slug.'-'.$subName)],
                 [
                     'parent_id' => $parent->id,
@@ -108,12 +174,15 @@ class ProductImportService
                     'status' => 'active',
                 ]
             );
+            $this->stoneContent->ensureCategoryContent($child);
+
+            return $child;
         }
 
         return $parent;
     }
 
-    private function resolveCertification(array $data): ?Certification
+    private function resolveCertification(array $data, string $sku): ?Certification
     {
         $certName = $this->val($data, ['certification_name', 'certificate', 'cert', 'pa_certificate']);
         $certNumber = $this->val($data, ['certificate_number', 'cert_number', 'cert_no']);
@@ -123,7 +192,7 @@ class ProductImportService
         }
 
         return Certification::updateOrCreate(
-            ['certificate_number' => $certNumber ?: $certName],
+            ['certificate_number' => $certNumber ?: $sku],
             [
                 'name' => $certName ?: 'Gemstone Certificate',
                 'agency' => $this->val($data, ['certification_agency', 'cert_agency', 'lab']) ?: 'IGI',
@@ -149,7 +218,7 @@ class ProductImportService
         }
         $gallery = $this->val($data, ['gallery_images', 'images', 'image_urls']);
         if ($gallery) {
-            $urls = array_merge($urls, array_map('trim', explode('|', $gallery)));
+            $urls = array_merge($urls, array_map('trim', preg_split('/[|,]/', $gallery)));
         }
 
         foreach (array_values(array_unique(array_filter($urls))) as $i => $url) {
@@ -180,10 +249,11 @@ class ProductImportService
         }
 
         return array_filter([
-            'Clarity' => $this->val($data, ['clarity']),
-            'Color' => $this->val($data, ['color']),
-            'Cut' => $this->val($data, ['cut']),
-            'Origin' => $this->val($data, ['origin']),
+            'Shape' => $this->val($data, ['shape']),
+            'Carat' => $this->val($data, ['carat', 'weight']),
+            'Certificate' => $this->val($data, ['certificate']),
+            'Dimensions' => $this->val($data, ['dimensions']),
+            'Gems Type' => $this->val($data, ['gems_type']),
         ]);
     }
 
@@ -193,12 +263,34 @@ class ProductImportService
             return ['min' => (int) $m[1], 'max' => (int) $m[2]];
         }
 
+        if ($value && preg_match('/(\d+)\s*[-–]?\s*day/i', $value, $m)) {
+            $days = (int) $m[1];
+
+            return ['min' => $days, 'max' => $days];
+        }
+
         return ['min' => 10, 'max' => 14];
+    }
+
+    private function resolvePublishStatus(array $data): string
+    {
+        $published = strtolower($this->val($data, ['published', 'status']) ?? '1');
+
+        if (in_array($published, ['0', 'no', 'false', 'draft'], true)) {
+            return 'draft';
+        }
+
+        return strtolower($published) === 'draft' ? 'draft' : 'published';
     }
 
     private function stockStatus(array $data): string
     {
-        $status = strtolower($this->val($data, ['stock_status', 'availability']) ?? '');
+        $inStock = strtolower($this->val($data, ['in_stock', 'stock_status', 'availability']) ?? '1');
+        if (in_array($inStock, ['0', 'no', 'false'], true)) {
+            return 'out_of_stock';
+        }
+
+        $status = strtolower($this->val($data, ['stock_status']) ?? '');
 
         return in_array($status, ['out_of_stock', 'out of stock', 'sold'], true) ? 'out_of_stock' : 'in_stock';
     }
